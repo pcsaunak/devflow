@@ -1,4 +1,3 @@
-import { TagType } from "@/types";
 import Link from "next/link";
 import React from "react";
 import { Badge } from "@/components/ui/badge";
@@ -13,23 +12,27 @@ import { Badge } from "@/components/ui/badge";
  */
 
 const RenderTag = ({
-  tag,
+  id,
+  title,
+  count,
   showCount,
 }: {
-  tag: TagType;
+  id: number;
+  title: string;
+  count?: number;
   showCount: boolean;
 }) => {
   return (
-    <Link href={`/tags/${tag.id}`} className="flex-between  flex ">
+    <Link href={`/tags/${id}`} className="flex-between  flex ">
       <Badge
         className="background-light800_dark300 text-dark400_light500 rounded-md px-4 py-2 text-sm font-medium uppercase"
         variant="secondary"
       >
-        {tag.title}
+        {title}
       </Badge>
 
       {showCount ? (
-        <p className="small-medium text-dark500_light700">{tag.count} + </p>
+        <p className="small-medium text-dark500_light700">{count} + </p>
       ) : (
         ""
       )}
