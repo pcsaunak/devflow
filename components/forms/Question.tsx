@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useRef, useState } from "react";
 import { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,12 +19,54 @@ import {
 import { Input } from "@/components/ui/input";
 import { questionSchema } from "@/lib/validations";
 
-const Question = () => {
+// Tiny.docs editor integration
+import { Editor } from "@tinymce/tinymce-react";
+import { Badge } from "../ui/badge";
+import Image from "next/image";
+import { createQuestion } from "@/lib/actions/question.action";
+import { useRouter, usePathname } from "next/navigation";
+
+const type: any = "create";
+interface Props {
+  mongoUserId: string;
+}
+const Question = ({ mongoUserId }: Props) => {
+  const router = useRouter();
+
+  // eslint-disable-next-line no-unused-vars
+  const pathName = usePathname();
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // TinyEditor Entry
+  const editorRef = useRef(null);
+
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof questionSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
+  async function onSubmit(values: z.infer<typeof questionSchema>) {
+    setIsSubmitting(true);
     console.log(values);
+    try {
+      /**
+       * We can either try to create or Edit a Question
+       * For creating - make an async call to our DB.
+       * Once question creation is done,
+       * Navigate to home where we should be able to see
+       * the question.
+       */
+      await createQuestion({
+        title: values.title,
+        description: values.explanation,
+        tags: values.tags,
+        author: JSON.parse(mongoUserId),
+        path: pathName,
+      });
+
+      // Once this is done route to home page
+      router.push("/");
+    } catch (error) {
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   // 1. Define your form.
@@ -37,6 +79,44 @@ const Question = () => {
     },
   });
 
+  const handleOnKeyDownEvent = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    field: any
+  ) => {
+    console.log("Inside keydown handler");
+    // "Enter" this is case sensitive, I tried with small "enter" & it did not work
+    if (e.key === "Enter" && field.name === "tags") {
+      e.preventDefault();
+      console.log("Enter clicked & filed name tags");
+      const tagInput = e.target as HTMLInputElement;
+      const tagValue = tagInput.value.trim();
+
+      if (tagValue !== "") {
+        if (tagValue.length > 15) {
+          return form.setError("tags", {
+            type: "required",
+            message: "Tag must be less than 15 characters",
+          });
+        }
+      }
+
+      if (!field.value.includes(tagValue as never)) {
+        form.setValue("tags", [...field.value, tagValue]);
+        tagInput.value = "";
+        form.clearErrors("tags");
+      }
+    } else {
+      form.trigger();
+    }
+  };
+
+  const handleTagRemove = (
+    tag: string,
+    field: { name: string; value: string[] }
+  ) => {
+    const newTag = field.value.filter((value) => value !== tag);
+    form.setValue("tags", newTag);
+  };
   return (
     <Form {...form}>
       <form
@@ -70,7 +150,7 @@ const Question = () => {
 
         <FormField
           control={form.control}
-          name="title"
+          name="explanation"
           render={({ field }) => (
             <FormItem className="flex w-full flex-col gap-3">
               <FormLabel className="paragraph-semibold text-dark400_light800">
@@ -79,6 +159,42 @@ const Question = () => {
               </FormLabel>
               <FormControl className="-mt-3.5">
                 {/* To Do add an editor component/ */}
+                <Editor
+                  apiKey={process.env.NEXT_PUBLIC_TINY_EDITOR_API_KEY}
+                  onInit={(_evt, editor) =>
+                    // @ts-ignore
+                    (editorRef.current = editor)
+                  }
+                  onBlur={field.onBlur}
+                  onEditorChange={(content) => field.onChange(content)}
+                  initialValue=""
+                  init={{
+                    height: 350,
+                    menubar: false,
+                    plugins: [
+                      "advlist",
+                      "autolink",
+                      "lists",
+                      "link",
+                      "image",
+                      "charmap",
+                      "preview",
+                      "anchor",
+                      "searchreplace",
+                      "visualblocks",
+                      "codesample",
+                      "fullscreen",
+                      "insertdatetime",
+                      "media",
+                      "table",
+                    ],
+                    toolbar:
+                      "undo redo | blocks | " +
+                      "codesample | bold italic forecolor | alignleft aligncenter " +
+                      "alignright alignjustify | bullist numlist ",
+                    content_style: "body { font-family:Inter; font-size:16px }",
+                  }}
+                />
               </FormControl>
               <FormDescription className="body-regular mt-2.5 text-light-500">
                 Introduce the problem and expand on what you put in the title.
@@ -98,12 +214,37 @@ const Question = () => {
                 Tags <span className="text-primary-500">*</span>
               </FormLabel>
               <FormControl className="-mt-3.5">
-                <Input
-                  className="no-focus paragraph-regular background-light900_dark300
+                <>
+                  <Input
+                    className="no-focus paragraph-regular background-light900_dark300
                   light-border-2 text-dark300_light700 min-h-[53px] border"
-                  placeholder="Add tags..."
-                  {...field}
-                />
+                    placeholder="Add tags..."
+                    onKeyDown={(e) => handleOnKeyDownEvent(e, field)}
+                  />
+                  {field.value.length > 0 && (
+                    <div className="flex-start mt-2.5 gap-2.5">
+                      {field.value.map((tag: any) => (
+                        <Badge
+                          key={tag}
+                          className="subtle-medium background-light800_dark300 
+                          text-light400_light500 flex items-center justify-center
+                          gap-2 rounded-md border-none px-4 py-2 capitalize
+                        "
+                          onClick={() => handleTagRemove(tag, field)}
+                        >
+                          {tag}
+                          <Image
+                            src={"/assets/icons/close.svg"}
+                            alt="close"
+                            width={12}
+                            height={12}
+                            className="cursor-pointer object-contain invert-0 dark:invert"
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </>
               </FormControl>
               <FormDescription className="body-regular mt-2.5 text-light-500">
                 Add up to 5 tags to describe what your question is about. Start
@@ -113,7 +254,17 @@ const Question = () => {
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button
+          className="primary-gradient !text-light-900"
+          disabled={isSubmitting}
+          type="submit"
+        >
+          {isSubmitting ? (
+            <>{type === "edit" ? "Editing" : "Posting"}</>
+          ) : (
+            <>{type === "edit" ? "Edit Question" : "Ask a question"}</>
+          )}
+        </Button>
       </form>
     </Form>
   );

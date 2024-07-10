@@ -1,5 +1,4 @@
-"use client";
-
+/* eslint-disable no-unused-vars */
 import QuestionCard from "@/components/cards/QuestionCard";
 import HomeFilters from "@/components/home/HomeFilters";
 import Filter from "@/components/shared/Filter";
@@ -9,15 +8,13 @@ import { Button } from "@/components/ui/button";
 import { HomePageFilters } from "@/constants/filters";
 
 import { useTheme } from "@/context/ThemeProvider";
+import { getQuestions } from "@/lib/actions/question.action";
 
 import Link from "next/link";
 
 import React from "react";
 
-const Home = () => {
-  // eslint-disable-next-line no-unused-vars
-  const mode = useTheme();
-
+export async function Home() {
   const questions = [
     {
       _id: "1",
@@ -107,6 +104,9 @@ const Home = () => {
       createdAt: new Date("2024-06-20T12:00:00.000Z"),
     },
   ];
+
+  const result = await getQuestions({});
+  console.log(result?.questions);
   return (
     <>
       <div className="flex-between flex-col-reverse gap-4 sm:flex-row sm:items-center">
@@ -138,8 +138,8 @@ const Home = () => {
       <HomeFilters />
       {/* Creating a div where I can display all the questions */}
       <div className="mt-10 flex w-full flex-col gap-6">
-        {questions.length > 0 ? (
-          questions.map((question) => (
+        {result?.questions.length > 0 ? (
+          result.questions.map((question) => (
             <QuestionCard
               key={question._id}
               _id={question._id}
@@ -166,6 +166,6 @@ const Home = () => {
       </div>
     </>
   );
-};
+}
 
 export default Home;
