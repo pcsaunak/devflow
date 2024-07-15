@@ -20,3 +20,21 @@ export interface CreateQuestionParams {
   author: Schema.Types.ObjectId | IUser;
   path?: string;
 }
+
+export interface CreateUserParams {
+  clerkId: string;
+  email: string;
+  picture: string;
+  name: string;
+  username?: string;
+}
+
+export interface UpdateUserParams {
+  clerkId: string;
+  updateData: Partial<IUser>;
+  path: string;
+}
+
+export interface DeleteUserParams {
+  clerkId: string;
+}
