@@ -14,7 +14,7 @@ import Link from "next/link";
 
 import React from "react";
 
-export async function Home() {
+async function Home() {
   const questions = [
     {
       _id: "1",
