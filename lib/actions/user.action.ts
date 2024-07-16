@@ -5,6 +5,7 @@ import { connectToDatabse } from "../mongoose";
 import {
   CreateUserParams,
   DeleteUserParams,
+  GetAllUserParams,
   UpdateUserParams,
 } from "./shared.types";
 import { revalidatePath } from "next/cache";
@@ -72,6 +73,19 @@ export const deleteUser = async (params: DeleteUserParams) => {
     return deletedUser;
   } catch (error) {
     console.error("Error while creating User");
+    throw error;
+  }
+};
+
+export const getAllUsers = async (params: GetAllUserParams) => {
+  try {
+    connectToDatabse();
+    // const { page=1, pageSize=20, filter, search} = params
+    const users = await User.find({});
+    console.log("Data from User Action", users);
+    return users;
+  } catch (error) {
+    console.error("Error while fetching all users");
     throw error;
   }
 };
