@@ -3,6 +3,7 @@
 import User from "@/models/user.model";
 import { connectToDatabse } from "../mongoose";
 import { GetTopInteractedTagsParams } from "./shared.types";
+import Tag from "@/models/tag.model";
 
 export const getTopInteractedTags = async (
   params: GetTopInteractedTagsParams
@@ -23,6 +24,17 @@ export const getTopInteractedTags = async (
     ];
   } catch (error) {
     console.error("Error while fetching all users");
+    throw error;
+  }
+};
+
+export const getAllTags = async () => {
+  try {
+    connectToDatabse();
+    const response = await Tag.find({}).sort({ createdAt: "asc" });
+    return response;
+  } catch (error) {
+    console.error("Error while fetching all tags");
     throw error;
   }
 };
