@@ -1,6 +1,10 @@
 "use server";
 
-import { CreateQuestionParams, GetQuestionParams } from "./shared.types";
+import {
+  CreateQuestionParams,
+  GetQuestionByIdParams,
+  GetQuestionParams,
+} from "./shared.types";
 import { connectToDatabse } from "../mongoose";
 import Tag from "@/models/tag.model";
 import User from "@/models/user.model";
@@ -27,7 +31,6 @@ export async function createQuestion(params: CreateQuestionParams) {
   try {
     connectToDatabse();
 
-    // eslint-disable-next-line no-unused-vars
     const { title, description, tags, author, path } = params;
 
     // Create the question
@@ -63,3 +66,20 @@ export async function createQuestion(params: CreateQuestionParams) {
     throw error;
   }
 }
+
+export const getQuestionDetails = async (params: GetQuestionByIdParams) => {
+  try {
+    connectToDatabse();
+    const question = Question.findById(params.questionId)
+      .populate({ path: "tags", model: Tag, select: "_id name" })
+      .populate({
+        path: "author",
+        model: User,
+        select: "_id clerkId picture name",
+      });
+    return question;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
