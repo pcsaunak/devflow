@@ -67,7 +67,7 @@ export async function createQuestion(params: CreateQuestionParams) {
   }
 }
 
-export const getQuestionDetails = async (params: GetQuestionByIdParams) => {
+export const getQuestionById = async (params: GetQuestionByIdParams) => {
   try {
     connectToDatabse();
     const question = Question.findById(params.questionId)

@@ -1,11 +1,16 @@
 import Answer from "@/components/forms/Answer";
+import AllAnswers from "@/components/shared/AllAnswers";
 import Metric from "@/components/shared/Metric";
 import ParseHTML from "@/components/shared/ParseHTML";
 import RenderTag from "@/components/shared/RenderTag";
-import { getQuestionDetails } from "@/lib/actions/question.action";
+import Votes from "@/components/shared/Votes";
+import { getQuestionById } from "@/lib/actions/question.action";
+import { getUserById } from "@/lib/actions/user.action";
 import { formatDateAgo, formatNumber } from "@/lib/utils";
+import { auth } from "@clerk/nextjs/server";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import React from "react";
 
 interface QuestionDetailsParams {
@@ -14,10 +19,21 @@ interface QuestionDetailsParams {
   };
 }
 
-const Page = async ({ params }: QuestionDetailsParams) => {
-  const result = await getQuestionDetails({ questionId: params.id });
-  console.log("Question Details", result);
+const QuestionDetails = async ({ params }: QuestionDetailsParams) => {
+  const result = await getQuestionById({ questionId: params.id });
+  console.log("Question Id", result._id);
 
+  const { userId } = auth();
+
+  console.log("User Id in Question Details Page", userId);
+  let mongoUser;
+
+  if (userId) {
+    mongoUser = await getUserById({ userId });
+  }
+
+  console.log("Mongo User", mongoUser);
+  if (!userId) redirect("/sign-in");
   return (
     <>
       <div className="flex-start w-full flex-col">
@@ -40,7 +56,9 @@ const Page = async ({ params }: QuestionDetailsParams) => {
               {result.author.name}
             </p>
           </Link>
-          <div className="flex justify-end">VOTING</div>
+          <div className="flex justify-end">
+            <Votes />
+          </div>
         </div>
         <h2 className="h2-semibold text-dark200_light900 mt-3.5 w-full text-left">
           {result.title}
@@ -91,9 +109,19 @@ const Page = async ({ params }: QuestionDetailsParams) => {
         ))}
       </div>
 
-      <Answer />
+      <AllAnswers
+        questionId={result._id}
+        user={JSON.stringify(mongoUser)}
+        totalAnswers={result.answers.length}
+      />
+
+      <Answer
+        user={JSON.stringify(mongoUser)}
+        questionId={JSON.stringify(result._id)}
+        question={JSON.stringify(result)}
+      />
     </>
   );
 };
 
-export default Page;
+export default QuestionDetails;
