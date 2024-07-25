@@ -4,6 +4,7 @@ import {
   CreateQuestionParams,
   GetQuestionByIdParams,
   GetQuestionParams,
+  QuestionVoteParams,
 } from "./shared.types";
 import { connectToDatabse } from "../mongoose";
 import Tag from "@/models/tag.model";
@@ -80,6 +81,88 @@ export const getQuestionById = async (params: GetQuestionByIdParams) => {
     return question;
   } catch (error) {
     console.error(error);
+    throw error;
+  }
+};
+
+export const upvoteQuestion = async (params: QuestionVoteParams) => {
+  try {
+    connectToDatabse();
+    const { userId, questionId, hasupVoted, hasdownVoted, path } = params;
+
+    let updateQuery = {};
+    /**
+     * If a user is clicking on upvote for the 2nd time we remove the user Id from upVotes array
+     * Similar for downVotes
+     */
+    if (hasupVoted) {
+      updateQuery = { $pull: { upVotes: JSON.parse(userId) } };
+    } else if (hasdownVoted) {
+      updateQuery = {
+        $pull: { downVotes: JSON.parse(userId) },
+        $push: { upVotes: JSON.parse(userId) },
+      };
+    } else {
+      updateQuery = { $addToSet: { upVotes: JSON.parse(userId) } };
+    }
+
+    console.log("Update query:", JSON.stringify(updateQuery));
+    const question = await Question.findByIdAndUpdate(
+      JSON.parse(questionId),
+      updateQuery,
+      {
+        new: true,
+      }
+    );
+    // if question is not found return an error
+    if (!question) {
+      throw new Error("Question not found");
+    }
+
+    // update author's reputation
+    revalidatePath(path);
+  } catch (error) {
+    console.error("Error in upvoting question");
+    throw error;
+  }
+};
+
+export const downvoteQuestion = async (params: QuestionVoteParams) => {
+  try {
+    connectToDatabse();
+    const { userId, questionId, hasupVoted, hasdownVoted, path } = params;
+    let updateQuery = {};
+    /**
+     * If a user is clicking on upvote for the 2nd time we remove the user Id from upVotes array
+     * Similar for downVotes
+     */
+    if (hasdownVoted) {
+      updateQuery = { $pull: { downVotes: JSON.parse(userId) } };
+    } else if (hasupVoted) {
+      updateQuery = {
+        $pull: { upVotes: JSON.parse(userId) },
+        $push: { downVotes: JSON.parse(userId) },
+      };
+    } else {
+      updateQuery = { $addToSet: { downVotes: JSON.parse(userId) } };
+    }
+
+    const question = await Question.findByIdAndUpdate(
+      JSON.parse(questionId),
+      updateQuery,
+      {
+        new: true,
+      }
+    );
+    // if question is not found return an error
+    if (!question) {
+      throw new Error("Question not found");
+    }
+
+    // update author's reputation
+    revalidatePath(path);
+  } catch (error) {
+    console.error("Error in upvoting question");
     throw error;
   }
 };

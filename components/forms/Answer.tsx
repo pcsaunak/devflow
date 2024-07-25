@@ -67,7 +67,7 @@ const Answer = ({
         editor.setContent("");
       }
     } catch (error) {
-      console.log("Error in submitting answer");
+      console.error("Error in submitting answer");
       throw error;
     } finally {
       setIsSubmitting(false);

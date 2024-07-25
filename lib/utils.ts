@@ -36,6 +36,6 @@ export function formatNumber(number: number): string {
   } else if (number >= 1000) {
     return `${Math.floor(number / 1000)}K`;
   } else {
-    return number.toString();
+    return number + "";
   }
 }

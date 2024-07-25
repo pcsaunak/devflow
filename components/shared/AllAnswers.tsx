@@ -32,7 +32,11 @@ const AllAnswers = async ({
       <div className="flex items-center justify-between">
         <h3 className="primary-text-gradient">{totalAnswers} Answers </h3>
 
-        <Filter filters={AnswerFilters} route={""} />
+        <Filter
+          filters={AnswerFilters}
+          route={""}
+          placeHolder="Select a filter"
+        />
       </div>
       <div>
         {result && result.length > 0 ? (
@@ -71,7 +75,18 @@ const AllAnswers = async ({
                     </div>
                   </Link>
                   <div className="flex justify-end">
-                    <Votes />
+                    <Votes
+                      itemId={JSON.stringify(answer._id)}
+                      type="answer"
+                      userId={user}
+                      downvotes={answer.downVotes.length}
+                      upvotes={answer.upVotes.length}
+                      key={answer._id}
+                      hasdownVoted={answer.downVotes.includes(
+                        JSON.parse(user)._id
+                      )}
+                      hasupVoted={answer.upVotes.includes(JSON.parse(user)._id)}
+                    />
                   </div>
                 </div>
               </div>
